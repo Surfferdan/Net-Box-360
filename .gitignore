@@ -64,9 +64,12 @@ web-port/.api-dev-build/
 xenia api/.tools/
 xenia api/XeniaManager.Api/data/
 
-# Entire Assets/ folder: mostly extracted Xbox 360/Xbox Live dashboard UI
-# material (boot video, tile art, icons, sign-in branding, layout reference
-# screenshots) plus per-game Steam art pulled from Steam's CDN. All of this
-# is third-party copyrighted content and must not be redistributed in a
-# public repo. Kept locally on disk so the app still runs; never uploaded.
-Assets/
+# Assets/: Xbox 360/Xbox Live dashboard UI material (boot video, tile art,
+# icons, sign-in branding, layout reference screenshots) is included, same
+# as the original DashX360 project's public repo (accepted, known risk).
+# Per-game Steam art (cover/header/hero/logo pulled per-App-ID from Steam's
+# CDN) is still excluded: that's separate, publisher-owned artwork with a
+# more clearly enforced takedown history, unrelated to the Xbox dashboard
+# assets above.
+Assets/GameArt/Steam/*
+!Assets/GameArt/Steam/.gitkeep
