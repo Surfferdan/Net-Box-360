@@ -1,17 +1,15 @@
 # DashX360, an Xbox 360 Metro Dashboard for Windows
 
-The first fanmade recreation of the Xbox 360 metro dashboard experience for Windows with tile navigation, controller support, Guide overlays, local profile data, custom themes, boot media, and dashboard audio cues.
+This project includes work inspired by DashX360, a fan-made recreation of the Xbox 360 Metro Dashboard for Windows.
 
-If you like my work, feel free to donate to my ko-fi! however money will never be needed to use this! https://Ko-fi.com/zivvoz
+Original DashX360: ZivvoZ
+YouTube: https://youtube.com/@zivvoz
 
-Original app credit: ZivvoZ
-https://youtube.com/@zivvoz
+Full credit for the original DashX360 concept and implementation goes to ZivvoZ.
 
-## Version 1.2.1
 
-- Custom dashboard tile colors now also drive the dashboard accent boxes in Guide menus, selection bars, and settings buttons.
-- Fixed Guide/Friends icon glyph rendering so people, messages, controller, voice, and reputation icons display correctly instead of fallback boxes.
-- Fixed startup behavior for recovered public builds so the main window opens reliably.
+## Version 1.0
+
 - Disabled the unsafe DirectInput fallback path that could crash the app on some systems; XInput controller support remains active.
 
 ## Features
@@ -20,31 +18,24 @@ https://youtube.com/@zivvoz
 - Controller-first navigation with keyboard and mouse support
 - Xbox Guide overlay with Friends, Party, Profile, media controls, achievements, and search screens
 - Local profile and friend data with cached gamer pictures
-- Boot video, dashboard audio cues, and Metro-style tile presentation
-- Custom theme support
-- Steam library scanning with Steam-provided cover art
-- Import/export support for user data transfer and version updates
+- Dashboard audio cues, and Metro-style tile presentation
+- Custom theme support (Coming soon)
+- Xbox 360 library scanning with Xenia-provided cover art
 
 ## How to Use
-1. Launch the application.
-2. Connect your controller.
-3. In Steam, turn off Enable Guide Button Chords for controllers.
-4. Use the Back + Start buttons together (or Win + Left Shift + Left Ctrl) to open the Guide.
-5. Navigate with the controller just like the original Xbox 360 dashboard.
-
+(Guide Coming Soon)
 
 ### Requirements
 
-- Untick `Enable Guide Button Chords for controllers` to use the guide if using steam
 - Windows 10 or Windows 11
 
 ### Working on the Project
 
-DashX360 is open for people who want to help improve it. If you use this project, modify it, or build on top of it, please credit the original project and creator:
+Net Box 360 is an open project and contributions are welcome. If you use, modify, or build upon this project, please give credit to the original creator and project.
 
-Original project by zivvoz / DashX360
+Original project: Surfferdan / Net Box 360
 
-Do not reupload or redistribute modified versions in a way that makes it look like you created the original project from scratch.
+Feel free to fork the project, contribute improvements, or create your own additions. 
 
 ## Controls
 
