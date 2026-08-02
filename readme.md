@@ -72,13 +72,21 @@ If you build on this project further, please keep this credits section intact, p
 
 This repo has three independently buildable components. You don't need all three unless you're working on that part.
 
-Run `build-all.bat` from the repo root to build all three in one go (requires all prerequisites below installed and on PATH).
+Run `build-all.bat` from the repo root to build the desktop launcher, web dashboard, API, and streaming bridge in one go (requires all prerequisites below installed and on PATH).
 
 ### Prerequisites
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) — for the Xenia/NetBox API and adapters
 - [Go](https://go.dev/dl/) (1.21+) — for the CloudMorph streaming bridge
 - [Node.js](https://nodejs.org/) (18+) with npm — for the web dashboard frontend
+
+### DashX360 desktop launcher (`XboxMetroLauncher.csproj`)
+
+```powershell
+dotnet build XboxMetroLauncher.csproj
+```
+
+This build copies the repo's `Assets/` and `Data/*.json` files into the launcher output folder, which is required for dashboard art, boot media, and sounds to load at runtime.
 
 ### Web dashboard (`web-port/`)
 

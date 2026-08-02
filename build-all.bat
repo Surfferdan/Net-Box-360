@@ -11,7 +11,17 @@ echo  NetBox 360 - Build All
 echo ===============================================
 
 echo.
-echo [1/3] Web dashboard (web-port)...
+echo [1/4] DashX360 desktop launcher...
+pushd "%ROOT%"
+call dotnet build XboxMetroLauncher.csproj
+if errorlevel 1 (
+    echo   FAILED: dotnet build XboxMetroLauncher.csproj
+    set FAILED=1
+)
+popd
+
+echo.
+echo [2/4] Web dashboard (web-port)...
 pushd "%ROOT%web-port"
 call npm install
 if errorlevel 1 (
@@ -34,7 +44,7 @@ popd
 
 :xenia_api
 echo.
-echo [2/3] NetBox / Xenia API (xenia api\XeniaManager.Api)...
+echo [3/4] NetBox / Xenia API (xenia api\XeniaManager.Api)...
 pushd "%ROOT%xenia api\XeniaManager.Api"
 call dotnet build
 if errorlevel 1 (
@@ -44,7 +54,7 @@ if errorlevel 1 (
 popd
 
 echo.
-echo [3/3] CloudMorph streaming bridge (cloud morph code\cloud-morph-master)...
+echo [4/4] CloudMorph streaming bridge (cloud morph code\cloud-morph-master)...
 pushd "%ROOT%cloud morph code\cloud-morph-master"
 call go build ./...
 if errorlevel 1 (
