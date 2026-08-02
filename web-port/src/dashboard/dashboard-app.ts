@@ -17,15 +17,12 @@ import { AuthOverlay } from "./auth/auth-overlay";
 import { getLaunchableGames } from "../services/XeniaLibraryService";
 import { addFriendByUsername, getChatMessages, getSocialFeed, removeFriend, sendChatMessage } from "../services/SocialService";
 import type { ChatMessage, Game } from "../services/types";
-import { getCloudMorphStatus, getGameSession, joinGameSession, leaveGameSession, reconnectActiveSession, startGameSession, stopGameSession } from "../services/SessionService";
-import { BackendEventClient, type BackendEventDto } from "../services/BackendEventClient";
+import { getCloudMorphStatus, getGameSession, reconnectActiveSession, startGameSession, stopGameSession } from "../services/SessionService";
 
 interface BladeRuntime {
   root: HTMLDivElement;
   tiles: TileElement[];
 }
-
-type InputRoutingState = "dashboard" | "gameplay" | "overlay";
 
 export class DashboardApp {
   private readonly root: HTMLElement;
@@ -45,7 +42,6 @@ export class DashboardApp {
   private readonly audio: WebAudioService;
   private activityBanner: HTMLDivElement | null = null;
   private activityFeed: ActivityItem[] = [];
-  private readonly backendEvents = new BackendEventClient();
 
   private currentBladeIndex = 1;
   private serverProfile: NetBoxProfile | null = null;
@@ -61,12 +57,9 @@ export class DashboardApp {
   private socialChatMessages: ChatMessage[] = [];
   private socialChatPollHandle: number | null = null;
   private activeSessionId: string | null = null;
-  private activeSessionCanStop = true;
-  private activeSessionAssignedSlot = 1;
   private activeStreamUrl: string | null = null;
   private activeCloudMorphHealth: { status: string; captureReady: boolean; streamReady: boolean; activeSessions: number } | null = null;
   private activeSessionPollHandle: number | null = null;
-  private inputRoutingState: InputRoutingState = "dashboard";
 
   public constructor(root: HTMLElement, animations: AnimationManager, input: InputManager) {
     this.root = root;
@@ -156,12 +149,7 @@ export class DashboardApp {
     this.friends.setChatSendAction(async (message, recipientUserId) => {
       await this.handleChatSend(message, recipientUserId);
     });
-    this.friends.setJoinSessionAction(async (sessionId) => {
-      await this.handleJoinSession(sessionId);
-    });
-    this.updateGuideHomeActionLabel();
     this.updateControllerInputSuppression();
-    this.backendEvents.subscribe(this.handleBackendEvent);
 
     this.root.appendChild(stage);
 
@@ -189,7 +177,6 @@ export class DashboardApp {
     const token = getSessionToken();
     if (!token) {
       this.isAuthed = false;
-      this.backendEvents.disconnect();
       this.serverProfile = null;
       this.currentProfile = null;
       this.guide.setProfileAvatar(null);
@@ -199,8 +186,6 @@ export class DashboardApp {
       this.authOverlay.setMessage("Sign in or create an account to continue.");
       this.authOverlay.setVisible(true);
       this.closeProfileEditor();
-      this.activeSessionCanStop = true;
-      this.updateGuideHomeActionLabel();
       return;
     }
 
@@ -215,11 +200,8 @@ export class DashboardApp {
       await this.refreshGameLibrary();
       this.authOverlay.setVisible(false);
       this.isAuthed = true;
-      this.backendEvents.connect();
-      this.updateGuideHomeActionLabel();
     } catch {
       this.isAuthed = false;
-      this.backendEvents.disconnect();
       this.serverProfile = null;
       this.currentProfile = null;
       this.guide.setProfileAvatar(null);
@@ -229,41 +211,6 @@ export class DashboardApp {
       this.authOverlay.setMessage("Session expired. Sign in again.");
       this.authOverlay.setVisible(true);
       this.closeProfileEditor();
-      this.activeSessionCanStop = true;
-      this.updateGuideHomeActionLabel();
-    }
-  }
-
-  private readonly handleBackendEvent = (event: BackendEventDto): void => {
-    const text = this.describeBackendEvent(event);
-    if (!text) {
-      return;
-    }
-
-    this.activityFeed = [{ id: `event-${event.type}-${event.timestamp}`, text }, ...this.activityFeed].slice(0, 20);
-    this.renderActivityBanner();
-  };
-
-  private describeBackendEvent(event: BackendEventDto): string | null {
-    switch (event.type) {
-      case "StreamFailed":
-        return `Stream connection failed${event.data.error ? `: ${event.data.error}` : "."}`;
-      case "StreamHealthy":
-        return "Stream reconnected.";
-      case "AudioRouteDegraded":
-        return `Audio routing degraded (${event.data.reason ?? "unknown reason"}).`;
-      case "AudioMuteFailed":
-        return "Could not mute host audio playback.";
-      case "PlayerJoined":
-        return `Player joined (slot ${event.data.slot ?? "?"}).`;
-      case "PlayerLeft":
-        return `Player left (slot ${event.data.slot ?? "?"}).`;
-      case "SessionFailed":
-        return `Session failed${event.data.error ? `: ${event.data.error}` : "."}`;
-      case "SessionStaleRecovered":
-        return "Recovered a stale session.";
-      default:
-        return null;
     }
   }
 
@@ -327,53 +274,6 @@ export class DashboardApp {
   private async handleRemoveFriend(friendUserId: string): Promise<void> {
     await removeFriend(friendUserId);
     await this.refreshSocialFeed();
-  }
-
-  /**
-   * Joins an existing game session (started by another player) as a guest.
-   * Guests never own the session, so leaving always calls leaveGameSession,
-   * never stopGameSession.
-   */
-  private async handleJoinSession(sessionId: string): Promise<void> {
-    if (this.activeSessionId) {
-      throw new Error("Leave your current session before joining another.");
-    }
-
-    this.inFriends = false;
-    this.friends.show(false, this.currentSocialMode);
-    this.inLibrary = false;
-    this.library.show(false);
-    this.inDetails = true;
-    this.details.showLaunching("Joining session...");
-    this.updateControllerInputSuppression();
-
-    try {
-      const session = await joinGameSession(sessionId);
-      this.activeSessionId = session.sessionId;
-      this.activeSessionCanStop = false;
-      this.activeSessionAssignedSlot = session.assignedControllerSlot ?? 1;
-      this.updateGuideHomeActionLabel();
-      this.activeStreamUrl = session.streamUrl && session.streamUrl.trim().length > 0
-        ? session.streamUrl
-        : null;
-      try {
-        this.activeCloudMorphHealth = await getCloudMorphStatus();
-      } catch {
-        this.activeCloudMorphHealth = null;
-      }
-
-      this.details.showLaunching(this.activeStreamUrl ? `Streaming ${session.game}` : `Joined session for ${session.game}`);
-      this.details.connectStream(this.activeStreamUrl, this.activeCloudMorphHealth, this.activeSessionId);
-      this.details.setAssignedPlayerSlot(this.activeSessionAssignedSlot);
-      this.beginActiveSessionPolling();
-    } catch (error) {
-      this.inDetails = false;
-      this.details.close();
-      this.updateControllerInputSuppression();
-      throw error instanceof Error ? error : new Error("Could not join session.");
-    }
-
-    this.updateControllerInputSuppression();
   }
 
   private async refreshGameLibrary(): Promise<void> {
@@ -482,7 +382,13 @@ export class DashboardApp {
   private async handleAuthSubmit(payload: LoginRequest | CreateAccountRequest, mode: "login" | "create"): Promise<void> {
     try {
       if (mode === "create") {
-        const created = await createAccount(payload);
+        const createPayload: CreateAccountRequest = {
+          username: payload.username,
+          password: payload.password,
+          displayName: "displayName" in payload ? payload.displayName : payload.username,
+          email: "email" in payload ? payload.email : undefined,
+        };
+        const created = await createAccount(createPayload);
         await login({ username: payload.username, password: payload.password });
         this.authOverlay.setMessage(`Account created for ${created.profile.displayName}. Loading profile...`);
       } else {
@@ -497,17 +403,12 @@ export class DashboardApp {
     }
   }
 
-  private async handleInput(action: DashboardInputAction, source: DashboardInputSource): Promise<void> {
+  private async handleInput(action: DashboardInputAction, _source: DashboardInputSource): Promise<void> {
     if (action === "Guide") {
       this.inGuide = !this.inGuide;
       this.guide.show(this.inGuide);
       void this.audio.play(this.inGuide ? "guide-open" : "guide-close", 0.7);
       this.updateControllerInputSuppression();
-      return;
-    }
-
-    if (this.inputRoutingState === "gameplay" && source === "gamepad") {
-      // During live gameplay, controller input is reserved for the stream path.
       return;
     }
 
@@ -522,29 +423,29 @@ export class DashboardApp {
       }
       if (action === "Activate") {
         void this.audio.play("guide-select", 0.7);
-        if (this.guide.selectedItem === "home") {
+        if (this.guide.selectedItem === "Xbox Home") {
           await this.closeActiveGameAndGoHome();
-        } else if (this.guide.selectedItem === "friends") {
+        } else if (this.guide.selectedItem === "Friends") {
           this.inGuide = false;
           this.guide.show(false);
           this.openSocialPanel("friends");
-        } else if (this.guide.selectedItem === "party") {
+        } else if (this.guide.selectedItem === "Party") {
           this.inGuide = false;
           this.guide.show(false);
           this.openSocialPanel("party");
-        } else if (this.guide.selectedItem === "messages") {
+        } else if (this.guide.selectedItem === "Messages") {
           this.inGuide = false;
           this.guide.show(false);
           this.openSocialPanel("messages");
-        } else if (this.guide.selectedItem === "activity") {
+        } else if (this.guide.selectedItem === "Beacons & Activity") {
           this.inGuide = false;
           this.guide.show(false);
           this.openSocialPanel("activity");
-        } else if (this.guide.selectedItem === "chat") {
+        } else if (this.guide.selectedItem === "Chat") {
           this.inGuide = false;
           this.guide.show(false);
           this.openSocialPanel("chat");
-        } else if (this.guide.selectedItem === "storage") {
+        } else if (this.guide.selectedItem === "Manage Storage") {
           this.inGuide = false;
           this.guide.show(false);
           const settingsIndex = BLADES.findIndex((blade) => blade.key === "settings");
@@ -601,9 +502,6 @@ export class DashboardApp {
           try {
             const session = await startGameSession(selected.id);
             this.activeSessionId = session.sessionId;
-            this.activeSessionCanStop = session.canStopSession;
-            this.activeSessionAssignedSlot = session.assignedControllerSlot ?? 1;
-            this.updateGuideHomeActionLabel();
             this.activeStreamUrl = session.streamUrl && session.streamUrl.trim().length > 0
               ? session.streamUrl
               : null;
@@ -615,13 +513,9 @@ export class DashboardApp {
 
             this.details.showLaunching(this.activeStreamUrl ? `Streaming ${selected.title}` : `Session started for ${selected.title}`);
             this.details.connectStream(this.activeStreamUrl, this.activeCloudMorphHealth, this.activeSessionId);
-            this.details.setAssignedPlayerSlot(this.activeSessionAssignedSlot);
             this.beginActiveSessionPolling();
           } catch (error) {
             this.activeSessionId = null;
-            this.activeSessionCanStop = true;
-            this.activeSessionAssignedSlot = 1;
-            this.updateGuideHomeActionLabel();
             this.activeStreamUrl = null;
             try {
               this.activeCloudMorphHealth = await getCloudMorphStatus();
@@ -694,22 +588,18 @@ export class DashboardApp {
   }
 
   /**
-   * Leaves or ends any active game session (based on role) and returns to Home.
+   * Stops any active game session and returns to the Home blade. This is the
+    * only way to exit a running game now (via the Guide's "Xbox Home" item) -
+   * gameplay buttons (including B/Back) are left alone to control the game.
    */
   private async closeActiveGameAndGoHome(): Promise<void> {
     if (this.activeSessionId) {
       try {
-        if (this.activeSessionCanStop) {
-          await stopGameSession(this.activeSessionId);
-        } else {
-          await leaveGameSession(this.activeSessionId);
-        }
+        await stopGameSession(this.activeSessionId);
       } catch {
-        // Ignore stop/leave failures during stream close.
+        // Ignore stop failures during stream close.
       }
       this.activeSessionId = null;
-      this.activeSessionCanStop = true;
-      this.updateGuideHomeActionLabel();
       this.activeStreamUrl = null;
       this.stopActiveSessionPolling();
     }
@@ -927,23 +817,11 @@ export class DashboardApp {
   }
 
   private shouldSuppressGameInput(): boolean {
-    return this.inputRoutingState !== "gameplay";
+    return this.inGuide || this.inLibrary || this.inFriends || this.inProfileEditor;
   }
 
   private updateControllerInputSuppression(): void {
-    this.updateInputRoutingState();
     this.details.setControllerInputEnabled(!this.shouldSuppressGameInput());
-  }
-
-  private updateInputRoutingState(): void {
-    if (this.activeSessionId && this.inDetails) {
-      this.inputRoutingState = this.inGuide || this.inLibrary || this.inFriends || this.inProfileEditor
-        ? "overlay"
-        : "gameplay";
-      return;
-    }
-
-    this.inputRoutingState = "dashboard";
   }
 
   private openProfileEditor(): void {
@@ -992,17 +870,11 @@ export class DashboardApp {
   private async handleSignOut(): Promise<void> {
     if (this.activeSessionId) {
       try {
-        if (this.activeSessionCanStop) {
-          await stopGameSession(this.activeSessionId);
-        } else {
-          await leaveGameSession(this.activeSessionId);
-        }
+        await stopGameSession(this.activeSessionId);
       } catch {
         // Ignore stop errors during sign out.
       }
       this.activeSessionId = null;
-      this.activeSessionCanStop = true;
-      this.updateGuideHomeActionLabel();
       this.activeStreamUrl = null;
       this.stopActiveSessionPolling();
     }
@@ -1033,9 +905,6 @@ export class DashboardApp {
     try {
       const active = await reconnectActiveSession();
       this.activeSessionId = active.sessionId;
-      this.activeSessionCanStop = active.canStopSession;
-      this.activeSessionAssignedSlot = active.assignedControllerSlot ?? 1;
-      this.updateGuideHomeActionLabel();
       this.activeStreamUrl = active.streamUrl && active.streamUrl.trim().length > 0
         ? active.streamUrl
         : null;
@@ -1049,14 +918,10 @@ export class DashboardApp {
       this.inDetails = true;
       this.details.showLaunching(`Streaming ${active.game}`);
       this.details.connectStream(this.activeStreamUrl, this.activeCloudMorphHealth, this.activeSessionId);
-      this.details.setAssignedPlayerSlot(this.activeSessionAssignedSlot);
       this.beginActiveSessionPolling();
       this.updateControllerInputSuppression();
     } catch {
       this.activeSessionId = null;
-      this.activeSessionCanStop = true;
-      this.activeSessionAssignedSlot = 1;
-      this.updateGuideHomeActionLabel();
       this.activeStreamUrl = null;
       this.stopActiveSessionPolling();
     }
@@ -1086,10 +951,6 @@ export class DashboardApp {
 
     try {
       const status = await getGameSession(this.activeSessionId);
-      this.activeSessionCanStop = status.canStopSession;
-      this.activeSessionAssignedSlot = status.assignedControllerSlot ?? 1;
-      this.updateGuideHomeActionLabel();
-      this.details.setOccupiedControllerSlots(status.occupiedControllerSlots ?? []);
       const nextStreamUrl = status.streamUrl && status.streamUrl.trim().length > 0
         ? status.streamUrl
         : null;
@@ -1097,29 +958,18 @@ export class DashboardApp {
       if (nextStreamUrl !== this.activeStreamUrl) {
         this.activeStreamUrl = nextStreamUrl;
         this.details.connectStream(this.activeStreamUrl, this.activeCloudMorphHealth, this.activeSessionId);
-        this.details.setAssignedPlayerSlot(this.activeSessionAssignedSlot);
       }
 
       if (status.status === "stopped" || status.status === "failed") {
         this.activeSessionId = null;
-        this.activeSessionCanStop = true;
-        this.activeSessionAssignedSlot = 1;
-        this.updateGuideHomeActionLabel();
         this.activeStreamUrl = null;
         this.stopActiveSessionPolling();
       }
     } catch {
       this.activeSessionId = null;
-      this.activeSessionCanStop = true;
-      this.activeSessionAssignedSlot = 1;
-      this.updateGuideHomeActionLabel();
       this.activeStreamUrl = null;
       this.stopActiveSessionPolling();
     }
-  }
-
-  private updateGuideHomeActionLabel(): void {
-    this.guide.setHomeActionLabel(this.activeSessionCanStop ? "End Session" : "Leave Session");
   }
 
   private resolveGuideAvatar(profile: NetBoxProfile | null): string | null {
