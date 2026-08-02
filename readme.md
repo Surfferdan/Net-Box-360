@@ -1,4 +1,4 @@
-# DashX360, an Xbox 360 Metro Dashboard for Windows
+# Net Box 360, is A fan-made project bringing an Xbox 360-inspired dashboard, gaming, and social experience to the web.
 
 This project includes work inspired by DashX360, a fan-made recreation of the Xbox 360 Metro Dashboard for Windows.
 
