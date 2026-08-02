@@ -68,3 +68,41 @@ This project (NetBox 360) builds on top of several other open-source projects, i
 
 If you build on this project further, please keep this credits section intact, preserve each upstream project's own license/notice where their code is included, and credit the original DashX360 project as noted above.
 
+## Building From Source
+
+This repo has three independently buildable components. You don't need all three unless you're working on that part.
+
+Run `build-all.bat` from the repo root to build all three in one go (requires all prerequisites below installed and on PATH).
+
+### Prerequisites
+
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) — for the Xenia/NetBox API and adapters
+- [Go](https://go.dev/dl/) (1.21+) — for the CloudMorph streaming bridge
+- [Node.js](https://nodejs.org/) (18+) with npm — for the web dashboard frontend
+
+### Web dashboard (`web-port/`)
+
+```powershell
+cd web-port
+npm install
+npm run dev        # local dev server
+npx tsc --noEmit    # type-check
+npx vite build      # production build
+```
+
+### NetBox / Xenia API (`xenia api/XeniaManager.Api`)
+
+```powershell
+cd "xenia api/XeniaManager.Api"
+dotnet build
+```
+
+This restores and builds the dependent projects automatically (`NetBox.Models`, `XeniaManager.Models`, `XeniaManager.Core`, `XeniaManager.Adapters`, `NetBox.Adapters`, `NetBox.Data`, `NetBox.Core`).
+
+### CloudMorph streaming bridge (`cloud morph code/cloud-morph-master`)
+
+```powershell
+cd "cloud morph code/cloud-morph-master"
+go build ./...
+```
+
