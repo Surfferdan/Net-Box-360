@@ -19,20 +19,25 @@ internal static class AppPaths
 	{
 		get
 		{
-			string text = Environment.ProcessPath;
-			if (string.IsNullOrWhiteSpace(text))
+			string text = Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory);
+			if (!string.IsNullOrWhiteSpace(text) && Directory.Exists(text))
+			{
+				return text;
+			}
+			string text2 = Environment.ProcessPath;
+			if (string.IsNullOrWhiteSpace(text2))
 			{
 				try
 				{
-					text = Process.GetCurrentProcess().MainModule?.FileName;
+					text2 = Process.GetCurrentProcess().MainModule?.FileName;
 				}
 				catch
 				{
-					text = null;
+					text2 = null;
 				}
 			}
-			string text2 = (string.IsNullOrWhiteSpace(text) ? AppContext.BaseDirectory : Path.GetDirectoryName(text));
-			return Path.TrimEndingDirectorySeparator(string.IsNullOrWhiteSpace(text2) ? AppContext.BaseDirectory : text2);
+			string text3 = (string.IsNullOrWhiteSpace(text2) ? AppContext.BaseDirectory : Path.GetDirectoryName(text2));
+			return Path.TrimEndingDirectorySeparator(string.IsNullOrWhiteSpace(text3) ? AppContext.BaseDirectory : text3);
 		}
 	}
 
