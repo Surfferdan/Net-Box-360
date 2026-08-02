@@ -39,11 +39,7 @@ Feel free to fork the project, contribute improvements, or create your own addit
 
 ## Controls
 
-- `A` / `Enter`: select
-- `B` / `Escape`: back
-- `X`: context actions where available
-- `Y`: secondary actions where available
-- Win + Ctrl + Shift / Back + Start : open the Xbox Guide overlay
+- Mostly Default Xbox controller layout Compatibility. some keyboard navigation support .
 
 ## Legal / Disclaimer
 
