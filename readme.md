@@ -24,7 +24,7 @@ Full credit for the original DashX360 concept and implementation goes to ZivvoZ.
 - Local profile and friend data with cached gamer pictures
 - Dashboard audio cues, and Metro-style tile presentation
 - Custom theme support (Coming soon)
-- Xbox 360 library scanning with Xenia-provided cover art
+- Xbox 360 Roms library scanning with Xenia-provided cover art
 
 ## How to Use
 (Guide Coming Soon)
