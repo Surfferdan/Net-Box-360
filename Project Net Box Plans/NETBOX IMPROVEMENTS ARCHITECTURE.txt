@@ -1,0 +1,344 @@
+I actually think this is becoming a solid architecture. More importantly, it has a clear separation of responsibilities. There are only a few structural changes I'd make before the project gets too large.
+Overall
+I'd consider this your v1 architecture.
+Browser
+     ↓
+Net Box API
+     ↓
+Core Services
+     ↓
+Adapters
+     ↓
+Runtime
+
+That is exactly the layering I'd expect for something like this.
+
+───
+
+What I would change
+1. Add a Runtime Manager
+Right now you have:
+GameSessionService
+
+↓
+
+GameLauncher
+
+↓
+
+Virtual Display
+
+↓
+
+Audio
+
+↓
+
+CloudMorph
+
+↓
+
+Xenia
+
+GameSessionService is starting to own too much.
+I'd insert another layer.
+GameSessionService
+
+↓
+
+RuntimeManager
+
+↓
+
+Launcher
+Virtual Display
+Audio
+CloudMorph
+Input
+
+RuntimeManager's job becomes:
+• Boot runtime
+• Shutdown runtime
+• Health checks
+• Recover crashes
+• Restart CloudMorph
+• Restart Xenia
+• Recover audio
+• Recover virtual display
+Then GameSessionService simply says
+StartSession()
+
+↓
+
+RuntimeManager.Start()
+
+instead of manually coordinating every subsystem.
+
+───
+
+2. Add an Input Manager
+Right now controller ownership is scattered.
+I'd make it explicit.
+InputManager
+
+↓
+
+Browser Player
+
+↓
+
+Controller Slot
+
+↓
+
+CloudMorph
+
+↓
+
+Virtual XInput
+
+↓
+
+Xenia
+
+Responsibilities:
+• Player joins
+• Player leaves
+• Controller assignment
+• Home button interception
+• Input routing
+• Local input lockout
+That keeps all controller logic in one place.
+
+───
+
+3. Split CloudMorph Adapter
+Instead of
+CloudMorphAdapter
+
+I'd eventually have
+CloudMorphClient
+
+CloudMorphSessionManager
+
+CloudMorphHealthService
+
+The current adapter is probably going to grow very quickly.
+
+───
+
+4. Add Display Manager
+Eventually you'll have:
+Virtual Display
+
+Window Position
+
+Resolution
+
+HDR
+
+Monitor Assignment
+
+Instead of:
+WindowsVirtualDisplayProvider
+
+I'd think:
+DisplayManager
+
+↓
+
+VirtualDisplayProvider
+
+↓
+
+WindowPlacementService
+
+That'll make supporting different GPUs or Windows versions easier later.
+
+───
+
+5. Add Audio Manager
+Instead of:
+WindowsAudioDeviceRouter
+
+WindowsProcessAudioPolicy
+
+I'd create:
+AudioManager
+
+↓
+
+Router
+
+↓
+
+Capture
+
+↓
+
+Process Policy
+
+Because eventually you'll need things like:
+• mute local speakers
+• send audio only to WebRTC
+• multiple audio devices
+• diagnostics
+• audio restart
+
+───
+
+Biggest missing subsystem
+I think your architecture is missing one really important service:
+Event Bus
+
+Everything is currently talking directly to everything else.
+Instead:
+Xenia Started
+
+↓
+
+Event
+
+↓
+
+Dashboard
+
+↓
+
+Friends Service
+
+↓
+
+CloudMorph
+
+↓
+
+Discord Presence
+
+↓
+
+Diagnostics
+
+Example:
+Game Started
+
+↓
+
+EventBus.Publish()
+
+↓
+
+Achievements update
+
+↓
+
+Friend presence update
+
+↓
+
+Dashboard animation
+
+↓
+
+Discord Rich Presence
+
+↓
+
+Logging
+
+Now adding features doesn't require editing half the project.
+
+───
+
+What I think is your killer feature
+This.
+Net Box
+
+↓
+
+ConsoleSession
+
+Everything belongs to the ConsoleSession.
+Not just the game.
+ConsoleSession
+
+Owner
+
+Players
+
+CloudMorph
+
+Xenia
+
+Audio
+
+Virtual Display
+
+Controller Slots
+
+Party Chat
+
+Runtime
+
+Diagnostics
+
+Events
+
+When you reconnect,
+you don't reconnect to CloudMorph.
+You reconnect to the ConsoleSession.
+That's a much cleaner mental model.
+
+───
+
+Long-term architecture
+I imagine it ending up looking something like this:
+Browser
+                    │
+         Three.js Dashboard
+                    │
+────────────────────────────────────
+              Net Box API
+                    │
+────────────────────────────────────
+          ConsoleSessionManager
+                    │
+      ┌─────────────┼─────────────┐
+      │             │             │
+ Account       Runtime       Social
+ Manager       Manager       Manager
+      │             │             │
+      │             │             │
+ Input      Display     Audio
+ Manager     Manager    Manager
+      │             │             │
+      └─────────────┼─────────────┘
+                    │
+             CloudMorph Client
+                    │
+            WebRTC / Streaming
+                    │
+          Virtual Display + Audio
+                    │
+                 Xenia
+
+My only other recommendation
+Before you add more features, define a formal state machine for ConsoleSession.
+Instead of letting the session jump between arbitrary states, define something like:
+Created
+    ↓
+Preparing
+    ↓
+Launching
+    ↓
+Streaming
+    ↓
+Running
+    ↓
+Paused
+    ↓
+Stopping
+    ↓
+Stopped
+
+Every subsystem (CloudMorph, Xenia, audio, display, frontend) should react to those state transitions instead of changing each other directly. That one design decision will make crash recovery, reconnects, diagnostics, and future multiplayer much easier because the entire platform shares a single, authoritative view of what the console is doing.

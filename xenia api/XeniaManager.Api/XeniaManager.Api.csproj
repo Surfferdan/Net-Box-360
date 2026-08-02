@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\XeniaManager.Core\XeniaManager.Core.csproj" />
+    <ProjectReference Include="..\XeniaManager.Adapters\XeniaManager.Adapters.csproj" />
+    <ProjectReference Include="..\XeniaManager.Models\XeniaManager.Models.csproj" />
+    <ProjectReference Include="..\NetBox.Core\NetBox.Core.csproj" />
+    <ProjectReference Include="..\NetBox.Data\NetBox.Data.csproj" />
+    <ProjectReference Include="..\NetBox.Adapters\NetBox.Adapters.csproj" />
+    <ProjectReference Include="..\NetBox.Models\NetBox.Models.csproj" />
+  </ItemGroup>
+</Project>

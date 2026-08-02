@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cloud Stream Unavailable</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1020;
+        --panel: rgba(12, 18, 34, 0.88);
+        --text: #f2f6ff;
+        --muted: #92a2c7;
+        --accent: #7dd3fc;
+        --border: rgba(125, 211, 252, 0.22);
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background:
+          radial-gradient(circle at top, rgba(125, 211, 252, 0.18), transparent 35%),
+          linear-gradient(180deg, #09101d, #111b33 55%, #0b1020);
+        color: var(--text);
+        font-family: "Segoe UI", Arial, sans-serif;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+        padding: 32px;
+        box-sizing: border-box;
+      }
+
+      .card {
+        max-width: 560px;
+        width: min(560px, 100%);
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 28px;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+      }
+
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.24em;
+        font-size: 12px;
+        color: var(--accent);
+        margin-bottom: 12px;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(28px, 4vw, 40px);
+        line-height: 1.05;
+      }
+
+      p {
+        margin: 0 0 14px;
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      .meta {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border);
+        font-size: 13px;
+        color: var(--muted);
+        word-break: break-word;
+      }
+
+      .badge {
+        display: inline-block;
+        margin-top: 14px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: rgba(125, 211, 252, 0.12);
+        color: #d9f3ff;
+        border: 1px solid rgba(125, 211, 252, 0.18);
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="eyebrow">CloudMorph</div>
+      <h1>Stream unavailable</h1>
+      <p>The session is active, but the live cloud stream endpoint is not reachable right now.</p>
+      <p>This fallback page is loading inside the frame so the player area does not stay blank.</p>
+      <div class="badge">Retry the session or bring up the CloudMorph service on port 8080.</div>
+      <div class="meta">The fallback page is served locally from the web port app.</div>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,438 @@
+I think you're at the point where it helps to stop thinking in terms of "features" and start thinking in terms of subsystems. If each subsystem has one responsibility, the project stays manageable.
+Net Box Streaming Architecture 
+───
+
+Phase 1 - Console Identity (Almost Done)
+Purpose:
+"Who is using the console?"
+Components:
+• Net Box accounts
+• Login
+• Sessions
+• Database
+• Xenia profile linking
+Output:
+Player logs in
+
+↓
+
+Dashboard loads
+
+↓
+
+Shows profile
+
+
+───
+
+Phase 2 - Game Discovery
+Purpose:
+"What games can I play?"
+Build:
+Game Scanner
+
+↓
+
+Scan folders
+
+↓
+
+Read Title ID
+
+↓
+
+Get artwork
+
+↓
+
+Store metadata
+
+Database:
+Game
+
+Title
+
+Path
+
+Title ID
+
+Cover
+
+Players
+
+Genre
+
+Last Played
+
+Dashboard:
+Games
+
+Halo 3
+
+Minecraft
+
+Gears 3
+
+etc...
+
+
+───
+
+Phase 3 - Session Manager
+Purpose:
+"Create a running Xbox."
+Flow:
+Player presses Play
+
+↓
+
+Create Session
+
+↓
+
+Load Xenia profile
+
+↓
+
+Load game
+
+↓
+
+Launch Xenia
+
+Database:
+Session
+
+ID
+
+Owner
+
+Game
+
+Status
+
+Started
+
+Players
+
+
+───
+
+Phase 4 - Virtual Console
+This is where your idea starts.
+Instead of:
+Desktop
+
+↓
+
+Xenia
+
+Do:
+Virtual Display
+
+↓
+
+Xenia renders
+
+↓
+
+Desktop untouched
+
+Requirements:
+• Create a virtual display when a session starts.
+• Launch Xenia on that display.
+• Force fullscreen on the virtual display.
+• Keep the physical desktop free for other tasks.
+
+───
+
+Phase 5 - Audio
+Current:
+Windows Speakers
+
+Target:
+Xenia
+
+↓
+
+Windows Audio Session
+
+↓
+
+CloudMorph
+
+↓
+
+Browser
+
+Requirements:
+• Capture Xenia's audio output.
+• Add it to the WebRTC stream.
+• Optionally mute local playback while still capturing it.
+
+───
+
+Phase 6 - CloudMorph Integration
+CloudMorph should become a service, not the application.
+Create:
+CloudMorphAdapter
+
+Functions:
+Start()
+
+Stop()
+
+AttachSession()
+
+DetachSession()
+
+GetStatus()
+
+Reconnect()
+
+The rest of Net Box should never call CloudMorph directly.
+
+───
+
+Phase 7 - Browser
+When a game launches:
+Dashboard
+
+↓
+
+Fade animation
+
+↓
+
+Game View
+
+↓
+
+WebRTC Player
+
+↓
+
+Game
+
+When the player quits:
+Game
+
+↓
+
+Close stream
+
+↓
+
+Return Dashboard
+
+No page reloads.
+No browser navigation.
+Everything stays inside your console UI.
+
+───
+
+Phase 8 - Controller Routing
+Normal:
+Controller
+
+↓
+
+Dashboard
+
+Game:
+Controller
+
+↓
+
+CloudMorph
+
+↓
+
+Xenia
+
+Guide Button:
+Controller
+
+↓
+
+Net Box
+
+↓
+
+Pause game input
+
+↓
+
+Open Guide
+
+↓
+
+Resume game
+
+
+───
+
+Phase 9 - Couch Multiplayer
+Session:
+Halo 3
+
+Player 1
+
+Player 2
+
+Player 3
+
+Player 4
+
+Each player:
+Login
+
+↓
+
+Join Session
+
+↓
+
+Assigned Controller
+
+↓
+
+Assigned Stream
+
+
+───
+
+Phase 10 - Your "Magic Feature"
+This is the one that makes Net Box unique.
+Normal split-screen:
++---------+---------+
+| P1 | P2 |
++---------+---------+
+| P3 | P4 |
++---------+---------+
+
+Net Box:
+Xenia
+
+↓
+
+Split-screen
+
+↓
+
+Video Processor
+
+↓
+
+Crop Player 1
+
+↓
+
+Browser 1
+
+
+Crop Player 2
+
+↓
+
+Browser 2
+
+
+Crop Player 3
+
+↓
+
+Browser 3
+
+
+Crop Player 4
+
+↓
+
+Browser 4
+
+One Xbox.
+One emulator.
+Four private fullscreen streams.
+Four controllers.
+Four users.
+One game.
+
+───
+
+Final Goal
+Power Server
+
+↓
+
+Open Browser
+
+↓
+
+Net Box Dashboard
+
+↓
+
+Login
+
+↓
+
+Friends Online
+
+↓
+
+Achievements
+
+↓
+
+Games
+
+↓
+
+Press Play
+
+↓
+
+Session Starts
+
+↓
+
+Xenia launches on hidden virtual display
+
+↓
+
+CloudMorph captures it
+
+↓
+
+Video + Audio stream to browser
+
+↓
+
+Controller input returns to Xenia
+
+↓
+
+Guide button opens your Three.js overlay
+
+↓
+
+Quit game
+
+↓
+
+Return to dashboard
+
+Development Order
+1. ✅ Accounts and login
+2. ✅ Xenia profile integration
+3. 🔄 Game scanner and library
+4. 🔄 Session manager
+5. 🔄 Launch Xenia on a virtual display
+6. 🔄 Capture video from the virtual display
+7. 🔄 Capture Xenia audio into the WebRTC stream
+8. 🔄 Embed the stream in the Three.js dashboard
+9. 🔄 Route browser controller input to Xenia
+10. 🔄 Build guide overlay and social features
+11. 🔄 Experiment with cropped split-screen streaming
+I also have one suggestion that I think will pay off later: define a ConsoleSession object as the centerpiece of the whole platform. Instead of each subsystem tracking its own state, everything—account, Xenia process, CloudMorph stream, virtual display, connected players, controller assignments, and stream URLs—belongs to one ConsoleSession. That gives you a single source of truth and makes features like reconnecting, resuming, spectator mode, or multi-device play much easier to add later.

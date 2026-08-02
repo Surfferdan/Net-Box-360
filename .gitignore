@@ -1,0 +1,72 @@
+# Build output
+bin/
+obj/
+.vs/
+artifacts/
+publish/
+
+# Local release folders
+Build/XboxMetroLauncher/
+Build/**/*.exe
+Build/**/*.dll
+Build/**/*.pdb
+
+# Logs and diagnostics
+*.log
+logs/
+Logs/
+discord-social-debug.log
+
+# User and machine-local data
+UserData/
+*.user
+*.suo
+*.cache
+Thumbs.db
+Desktop.ini
+
+# IDE noise
+.idea/
+.vscode/
+*.tmp
+*.bak
+*.orig
+
+# Local secrets/config overrides
+appsettings.Local.json
+appsettings.Development.json
+*.secrets.json
+steam-web-config.json
+
+# Ad-hoc local dev/verification scripts (may contain local test credentials)
+_vd_*.ps1
+_vd_*.json
+
+# Large local-only / vendored-build / superseded folders (not part of the
+# curated public source tree)
+Xenia Rebuild folder/
+Xenia api folder/
+old web/
+xenia Emulator/
+.vite/
+
+# JS/TS dependency and build output
+node_modules/
+dist/
+web-port/.dev-build/
+web-port/.api-dev-build/
+
+# Runtime databases and generated user data
+*.db
+*.sqlite
+*.sqlite3
+# Downloaded third-party tool binaries (large, not our source code)
+xenia api/.tools/
+xenia api/XeniaManager.Api/data/
+
+# Entire Assets/ folder: mostly extracted Xbox 360/Xbox Live dashboard UI
+# material (boot video, tile art, icons, sign-in branding, layout reference
+# screenshots) plus per-game Steam art pulled from Steam's CDN. All of this
+# is third-party copyrighted content and must not be redistributed in a
+# public repo. Kept locally on disk so the app still runs; never uploaded.
+Assets/

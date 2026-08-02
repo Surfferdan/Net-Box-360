@@ -1,0 +1,10 @@
+{
+  "name": "netbox-legacy-adapter",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Compatibility bridge letting netbox-client-sdk-shaped code run against the existing, working Generation 1 backend (xenia api/XeniaManager.Api + CloudMorph), without modifying or duplicating it.",
+  "scripts": {
+    "test": "node --test tests/*.test.ts"
+  }
+}
